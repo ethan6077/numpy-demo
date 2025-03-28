@@ -21,5 +21,17 @@ print("linear: ", linear)
 # plt.plot(linear, "o")
 # plt.show()
 
+nd_arranged = np.arange(10)
+print("nd_arranged: ", nd_arranged)
+
 spaced = np.arange(0, 100, 10)
-print("spaced: ", spaced)
+print(f"spaced: {spaced} with the size: {spaced.size}")
+
+rand_2d = np.random.random(size=(10, 10))
+# print("rand_2d: ", rand_2d)
+randn_2d = np.random.randn(10, 10)
+# print("randn_2d: ", randn_2d)
+randint_2d = np.random.randint(0, 100, size=(10, 10))
+# print("randint_2d: ", randint_2d)
+# np.savetxt("./output/randint_2d.csv", randint_2d, delimiter=",", fmt="%d")
+# np.savetxt("./output/randint_2d.txt", randint_2d, fmt="%d")
