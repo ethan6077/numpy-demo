@@ -7,3 +7,8 @@ __pycache__
 
 input/
 output/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
