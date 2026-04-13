@@ -1,5 +1,7 @@
 import math
 import collections
+import json
+import sys
 
 import numpy as np
 import pandas as pd
@@ -36,13 +38,118 @@ randint_2d = np.random.randint(0, 100, size=(10, 10))
 # np.savetxt("./output/randint_2d.csv", randint_2d, delimiter=",", fmt="%d")
 # np.savetxt("./output/randint_2d.txt", randint_2d, fmt="%d")
 
-cookie_val = (
-    "reartok=ux0wKRoptqr5MZVShGmVv0A6irXvJ3ToMCg9BwHEkimy0yg1GkrZId2okb9cbzMVumerZ_ZXwvoTJD7TtqhfJbr-KSfiiLwXgAfajOV18f4TppGRmkzymJDX9wLMr3Z-nO9Rpt5T2r06Y6jMV5ArzhgD7kpNr-5ljFGqoizAABrdZoaI97Nuix_TZMZTDTn1BH0TRqPxcaNTdLRy4UXAaUZhaZxcVtD4_hOe-TyPzZlizN-WV6mz5uv6od94uQ6R9zY33Q==; locke_access_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IktqQXNsNkkzZ2hvRDFTTDRsZE1XSSJ9.eyJ0b2tlbl91c2UiOiJhY2Nlc3MiLCJ2ZXJzaW9uIjoyLCJ1c2VybmFtZSI6ImZjNjlhOGY4LTg0YmItNDhhZi04MTJmLTE5YjA0NzlhZjFmNCIsImlzcyI6Imh0dHBzOi8vaWQucmVhbGVzdGF0ZS5jb20uYXUvIiwic3ViIjoiZW1haWx8NjRlNWFiMjNlNzcxMjBjMWRhNDQwOTFmIiwiYXVkIjpbImRlZmF1bHQiLCJodHRwczovL3Byb2QucmVhLWdyb3VwLmF1dGgwYXBwLmNvbS91c2VyaW5mbyJdLCJpYXQiOjE3Njg4ODYwMTEsImV4cCI6MTc2ODg4OTYxMSwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCBwaG9uZSBvZmZsaW5lX2FjY2VzcyIsImF6cCI6IjJmYjA2ZHFhYjk1aGNpNDZkZ2xkcGgwMzgyIn0.TxyZkJ5C3T_O1rWqwJxLk4eKp9KZdGdc33YhwnpMYZEa64jgiWO-W2BHYyiE0G0l-eF4LiDl2oZeEQfsk0TxH_FTyOJL38ryWauL9pDQBYLSdTiqfz8rkxJEhwU3rtKzD3V3crIrD8nvuWJkNh_K2Lyk4ZokxMlyDAs9Yx2JUl7wJhWiZnTvoCfaX8SHIuLOsqnInEk8dzJ_ywP13meGSrKSpob1GvXLLL1xtxCwflcP3BbFdp4GYp_wW9uyqyHIgTmCAW3oEssvCH_pAWxKL6ltygxJtocVjpfE2v5S29CwR8XgWKzptxUpbsJ-pAaKEKb7OIMXLx_in2HJ6lwVyA; reaidtok=eyJ1aWQiOiIyYzk5YjljOTU4ZmIyY2E5MDE1OTE2NmM5NDE2MDliMSIsImVtYWlsVmVyaWZpZWQiOnRydWUsImV4cGlyeU1pbGxzIjoxNzY4ODg5NjExMjMyfQ==.ckFLRm9xj7i6bpgprhrrh8PMJ9ra1a2pbRwOoIo5YrX7TnIsQ3hHAbFMEaEGoDyQ; reautok=eyJraWQiOiI1ODQzNzNlMy0xMjUxLTExZWEtYWQ3Yi00ZTAwYWMyYTA1MDUiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibGlkIjoiZmM2OWE4ZjgtODRiYi00OGFmLTgxMmYtMTliMDQ3OWFmMWY0IiwiaXNzIjoiaHR0cHM6Ly93d3cucmVhbGVzdGF0ZS5jb20uYXUiLCJtZmFfZW5hYmxlZCI6ZmFsc2UsImV4cCI6MTc2ODg4OTYxMSwiaWF0IjoxNzY4ODg2MDExLCJlbWFpbCI6ImV0aGFuNjA3N0BnbWFpbC5jb20iLCJqdGkiOiJsOXdhUm5UT29KMnVPL0pvdjZUMmlacFZ5Nlk9IiwiY2lkIjoiMmM5OWI5Yzk1OGZiMmNhOTAxNTkxNjZjOTQxNjA5YjEifQ.Q38G74jUyM-H1a5jQJscPkplUb5fTtnGKSifGlkJL9K3_QRIuQcmUDZNDSQ9hngJ1go03F8fycKAoyQUmLoi4oe2uWjtXIoYJ0mHi9AWjQjli-eiAErMj46yqiqA3kytXbO_EEVVrWQK6yRWwd5h8b5GDjyl312TTonCiDbPNYR51nV4DCjGUIWbmgwul-V"
-    * 5
-)
-print("cookie_val length: ", len(cookie_val))
+json_size_to_be_estimated = {
+    "locke_id": "ethan-123",
+    "suburbs": [
+        {
+            "name": "Ringwood",
+            "score": 5,
+            "updated_at": "2026-03-08T11:00:00",
+            "agent_id": "agent_123",
+            "conversation_id": "convo_123",
+        },
+        {
+            "name": "Croydon",
+            "score": 3,
+            "updated_at": "2026-02-08T18:00:00",
+            "conversation_id": "convo_222",
+        },
+    ],
+    "budget": {
+        "value": 900000,
+        "updated_at": "2026-01-09T13:00:00",
+        "conversation_id": "convo_333",
+    },
+    "construction_type": {
+        "value": "New Home",
+        "updated_at": "2026-01-09T13:00:00",
+        "conversation_id": "convo_333",
+    },
+    "property_type": {
+        "value": "house",
+        "updated_at": "2026-01-09T13:00:00",
+        "conversation_id": "convo_333",
+    },
+    "bedrooms": {
+        "value": 4,
+        "updated_at": "2026-01-09T13:00:00",
+        "conversation_id": "convo_444",
+    },
+    "bathrooms": {},
+    "land_size": {},
+    "amenities": {},
+    "other": "Looking for options in Melbourne",
+}
 
-byte_size_utf8 = len(cookie_val.encode("utf-8"))
-print("cookie_val byte size (UTF-8): ", byte_size_utf8)
+# Print the size of json_size_to_be_estimated
+print("\n" + "=" * 60)
+print("JSON SIZE ANALYSIS")
+print("=" * 60)
 
-print("cookie_val:", cookie_val)
+# 1. Size when serialized as JSON (with minimal whitespace)
+json_string = json.dumps(json_size_to_be_estimated, separators=(",", ":"))
+json_size_bytes = len(json_string.encode("utf-8"))
+print(f"\n📏 JSON String Size (minified):     {json_size_bytes:,} bytes")
+
+# 2. Size when serialized as pretty JSON
+json_pretty = json.dumps(json_size_to_be_estimated, indent=2)
+json_pretty_bytes = len(json_pretty.encode("utf-8"))
+print(f"📏 JSON String Size (pretty):       {json_pretty_bytes:,} bytes")
+
+# 3. Python object memory size (approximate)
+python_size = sys.getsizeof(json_size_to_be_estimated)
+print(f"💾 Python Object Size (shallow):   {python_size:,} bytes")
+
+
+# 4. Deep size (recursively calculate all nested objects)
+def get_deep_size(obj, seen=None):
+    """Recursively calculate the size of an object and all its contents"""
+    if seen is None:
+        seen = set()
+
+    obj_id = id(obj)
+    if obj_id in seen:
+        return 0
+
+    seen.add(obj_id)
+    size = sys.getsizeof(obj)
+
+    if isinstance(obj, dict):
+        size += sum(
+            get_deep_size(k, seen) + get_deep_size(v, seen) for k, v in obj.items()
+        )
+    elif isinstance(obj, (list, tuple, set)):
+        size += sum(get_deep_size(item, seen) for item in obj)
+
+    return size
+
+
+deep_size = get_deep_size(json_size_to_be_estimated)
+print(f"💾 Python Object Size (deep):      {deep_size:,} bytes")
+
+
+# 5. Structure information
+def count_keys(obj):
+    """Count all keys in nested dictionary"""
+    count = 0
+    if isinstance(obj, dict):
+        count += len(obj)
+        for v in obj.values():
+            count += count_keys(v)
+    elif isinstance(obj, list):
+        for item in obj:
+            count += count_keys(item)
+    return count
+
+
+total_keys = count_keys(json_size_to_be_estimated)
+print(f"\n🔑 Total Keys (all levels):         {total_keys}")
+print(f"🔑 Top-level Keys:                  {len(json_size_to_be_estimated)}")
+
+# 6. Show the JSON structure
+print(f"\n📋 JSON Structure Preview:")
+print("-" * 60)
+print(json.dumps(json_size_to_be_estimated, indent=2)[:500] + "...")
+print("-" * 60)
+
+print("\n" + "=" * 60)
