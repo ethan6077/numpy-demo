@@ -26,22 +26,8 @@ source .env/bin/activate
 python src/main.py
 ```
 
-## To install local packages
+## Run Scikit-Learn Demo
 
 ```bash
-which pip
-```
-
-```bash
-pip install -r requirements.txt
-```
-
-to add a new package
-
-```bash
-pip install numpy
-```
-
-```bash
-pip show numpy
+python src/sklearn_demo.py
 ```

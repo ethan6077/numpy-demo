@@ -6,8 +6,8 @@ KEY_COLUMN = "my_rea_id"
 # ketch_raw_data = pd.read_csv("./input/my-items-400-20260121.csv")
 # ketch_raw_data = pd.read_csv("./input/my-items-200-20260121.csv")
 # ketch_raw_data = pd.read_csv("./input/my-items-post-20260121.csv")
-raw_data_cs = pd.read_csv("./input/allow_suggested_disabled_20260408.csv")
-raw_data_dynamodb = pd.read_csv("./input/my_rea_ids_dynamodb.csv")
+raw_data_cs = pd.read_csv("./input/allow_suggested_disabled_20260413.csv")
+raw_data_dynamodb = pd.read_csv("./input/my_rea_ids_dynamodb_20260413.csv")
 
 # print("raw_data info: ", raw_data.info())
 
