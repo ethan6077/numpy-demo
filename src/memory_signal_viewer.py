@@ -130,6 +130,31 @@ def group_by_owner(records):
     return groups
 
 
+def top_owners(groups, limit=10):
+    """Return owner_ids ranked by record count (desc), capped at `limit`.
+
+    Ties are broken by owner_id so the order is deterministic.
+    """
+    ranked = sorted(groups, key=lambda owner: (-len(groups[owner]), owner))
+    return ranked[:limit]
+
+
+def resolve_owner_choice(choice, displayed, valid_owners):
+    """Map a menu input to an owner_id, or None if it matches nothing.
+
+    A number picks from the `displayed` shortlist (1-based); otherwise the
+    input is treated as a full owner_id and accepted if it's in `valid_owners`.
+    """
+    if choice.isdigit():
+        idx = int(choice)
+        if 1 <= idx <= len(displayed):
+            return displayed[idx - 1]
+        return None
+    if choice in valid_owners:
+        return choice
+    return None
+
+
 def format_signals(signals, paint=None):
     """Render the signals object as an indented key/value block."""
     paint = paint or Palette(enabled=False)
@@ -183,26 +208,35 @@ def _format_content(content, paint):
     return "\n".join(lines)
 
 
-def select_owner(groups, paint=None):
-    """Show the owner menu and return the chosen owner_id, or None to quit."""
+def select_owner(groups, paint=None, limit=10):
+    """Show the owner menu and return the chosen owner_id, or None to quit.
+
+    Shows only the top `limit` owners (by record count) to keep the list short;
+    any other owner is reachable by typing its full owner_id.
+    """
     paint = paint or Palette(enabled=False)
-    owners = list(groups.keys())
+    total = len(groups)
+    displayed = top_owners(groups, limit)
     while True:
-        print("\n" + paint.section("Data owners:"))
-        for i, owner in enumerate(owners):
+        shown = min(limit, total)
+        print("\n" + paint.section(f"Top {shown} of {total} data owners:"))
+        for i, owner in enumerate(displayed):
             count = len(groups[owner])
             label = "record" if count == 1 else "records"
             num = paint.key(f"[{i + 1}]")
             print(f"  {num} {owner}  {paint.dim(f'({count} {label})')}")
+        if total > shown:
+            print(paint.dim(f"  …and {total - shown} more — type a full owner_id to open one."))
         try:
-            choice = input("\nPick an owner number (q to quit): ").strip()
+            choice = input("\nPick a number or owner_id (q to quit): ").strip()
         except (EOFError, KeyboardInterrupt):
             return None
 
         if choice.lower() in ("q", "quit"):
             return None
-        if choice.isdigit() and 1 <= int(choice) <= len(owners):
-            return owners[int(choice) - 1]
+        owner_id = resolve_owner_choice(choice, displayed, groups.keys())
+        if owner_id is not None:
+            return owner_id
         print("Invalid choice, try again.")
 
 

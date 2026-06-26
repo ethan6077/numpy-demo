@@ -6,6 +6,7 @@ import os
 import sys
 import tempfile
 import unittest
+from collections import OrderedDict
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
@@ -147,6 +148,45 @@ class FormatRecordTest(unittest.TestCase):
         self.assertIn("buyer", out)
         self.assertIn("RAW MESSAGE", out)
         self.assertIn("User: hello", out)
+
+
+class TopOwnersTest(unittest.TestCase):
+    def _groups(self, counts):
+        return OrderedDict((owner, [None] * n) for owner, n in counts)
+
+    def test_orders_by_record_count_desc(self):
+        groups = self._groups([("a", 1), ("b", 5), ("c", 3)])
+        self.assertEqual(viewer.top_owners(groups), ["b", "c", "a"])
+
+    def test_limits_to_ten_by_default(self):
+        groups = self._groups([(f"o{i:02d}", i) for i in range(15)])
+        result = viewer.top_owners(groups)
+        self.assertEqual(len(result), 10)
+        self.assertEqual(result[0], "o14")  # highest count first
+
+    def test_ties_broken_by_owner_id_for_determinism(self):
+        groups = self._groups([("b", 2), ("a", 2), ("c", 2)])
+        self.assertEqual(viewer.top_owners(groups), ["a", "b", "c"])
+
+
+class ResolveOwnerChoiceTest(unittest.TestCase):
+    DISPLAYED = ["top1", "top2", "top3"]
+    VALID = {"top1", "top2", "top3", "hidden-owner"}
+
+    def test_number_selects_from_displayed(self):
+        self.assertEqual(viewer.resolve_owner_choice("2", self.DISPLAYED, self.VALID), "top2")
+
+    def test_full_owner_id_selects_even_if_not_displayed(self):
+        self.assertEqual(
+            viewer.resolve_owner_choice("hidden-owner", self.DISPLAYED, self.VALID),
+            "hidden-owner",
+        )
+
+    def test_out_of_range_number_is_none(self):
+        self.assertIsNone(viewer.resolve_owner_choice("9", self.DISPLAYED, self.VALID))
+
+    def test_unknown_id_is_none(self):
+        self.assertIsNone(viewer.resolve_owner_choice("nope", self.DISPLAYED, self.VALID))
 
 
 class ColorEnabledTest(unittest.TestCase):
