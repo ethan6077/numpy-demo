@@ -14,6 +14,7 @@ Run from the project root so the relative path resolves.
 
 import csv
 import json
+import os
 import sys
 import textwrap
 from collections import OrderedDict
@@ -23,6 +24,63 @@ DEFAULT_CSV = "./input/dda_memory_signals_20260626.csv"
 # pandas stores long CSV cells; raise the field-size limit so the big
 # `attributes` JSON column never trips csv's default cap.
 csv.field_size_limit(10 * 1024 * 1024)
+
+
+def color_enabled(stream, env, force_no_color=False):
+    """Decide whether ANSI color should be used for `stream`.
+
+    Off when `--no-color` is passed, when the NO_COLOR env var is present
+    (https://no-color.org), or when the stream is not an interactive TTY.
+    """
+    if force_no_color:
+        return False
+    if env.get("NO_COLOR"):
+        return False
+    return bool(getattr(stream, "isatty", lambda: False)())
+
+
+class Palette:
+    """Wraps text in ANSI codes when enabled; a no-op pass-through otherwise."""
+
+    # role -> SGR code(s)
+    _CODES = {
+        "header": "1;36",   # bold cyan
+        "section": "1;33",  # bold yellow
+        "key": "36",        # cyan
+        "value": "32",      # green
+        "user": "1;35",     # bold magenta
+        "agent": "1;34",    # bold blue
+        "dim": "2",         # faint
+    }
+
+    def __init__(self, enabled):
+        self.enabled = enabled
+
+    def _wrap(self, text, role):
+        if not self.enabled:
+            return text
+        return f"\033[{self._CODES[role]}m{text}\033[0m"
+
+    def header(self, text):
+        return self._wrap(text, "header")
+
+    def section(self, text):
+        return self._wrap(text, "section")
+
+    def key(self, text):
+        return self._wrap(text, "key")
+
+    def value(self, text):
+        return self._wrap(text, "value")
+
+    def user(self, text):
+        return self._wrap(text, "user")
+
+    def agent(self, text):
+        return self._wrap(text, "agent")
+
+    def dim(self, text):
+        return self._wrap(text, "dim")
 
 
 def load_records(path):
@@ -72,14 +130,16 @@ def group_by_owner(records):
     return groups
 
 
-def format_signals(signals):
+def format_signals(signals, paint=None):
     """Render the signals object as an indented key/value block."""
+    paint = paint or Palette(enabled=False)
     if not signals:
-        return "  (none)"
+        return paint.dim("  (none)")
     lines = []
     width = max(len(str(k)) for k in signals)
     for key, value in signals.items():
-        lines.append(f"  {str(key).ljust(width)} : {_format_value(value)}")
+        label = paint.key(str(key).ljust(width))
+        lines.append(f"  {label} : {paint.value(_format_value(value))}")
     return "\n".join(lines)
 
 
@@ -92,31 +152,48 @@ def _format_value(value):
     return str(value)
 
 
-def format_record(record, index, total):
+def format_record(record, index, total, paint=None):
     """Render a full record: header, signals panel, then raw message."""
+    paint = paint or Palette(enabled=False)
     owner = record["owner_id"]
     header = (
         f"─── Owner {owner}  ·  record {index + 1}/{total}  ·  "
         f"{record['timestamp']} ───"
     )
     return "\n".join([
-        header,
-        "== SIGNALS ==",
-        format_signals(record["signals"]),
-        "== RAW MESSAGE ==",
-        textwrap.indent(record["content"], "  "),
+        paint.header(header),
+        paint.section("== SIGNALS =="),
+        format_signals(record["signals"], paint),
+        paint.section("== RAW MESSAGE =="),
+        _format_content(record["content"], paint),
     ])
 
 
-def select_owner(groups):
+def _format_content(content, paint):
+    """Indent the conversation and tint User:/Agent: turn lines."""
+    lines = []
+    for line in content.splitlines():
+        stripped = line.lstrip()
+        if stripped.startswith("User:"):
+            lines.append("  " + paint.user(line))
+        elif stripped.startswith("Agent:"):
+            lines.append("  " + paint.agent(line))
+        else:
+            lines.append("  " + line)
+    return "\n".join(lines)
+
+
+def select_owner(groups, paint=None):
     """Show the owner menu and return the chosen owner_id, or None to quit."""
+    paint = paint or Palette(enabled=False)
     owners = list(groups.keys())
     while True:
-        print("\nData owners:")
+        print("\n" + paint.section("Data owners:"))
         for i, owner in enumerate(owners):
             count = len(groups[owner])
             label = "record" if count == 1 else "records"
-            print(f"  [{i + 1}] {owner}  ({count} {label})")
+            num = paint.key(f"[{i + 1}]")
+            print(f"  {num} {owner}  {paint.dim(f'({count} {label})')}")
         try:
             choice = input("\nPick an owner number (q to quit): ").strip()
         except (EOFError, KeyboardInterrupt):
@@ -129,12 +206,13 @@ def select_owner(groups):
         print("Invalid choice, try again.")
 
 
-def page_records(owner_id, records):
+def page_records(owner_id, records, paint=None):
     """Page through one owner's records. Returns 'menu' or 'quit'."""
+    paint = paint or Palette(enabled=False)
     total = len(records)
     index = 0
     while True:
-        print("\n" + format_record(records[index], index, total))
+        print("\n" + format_record(records[index], index, total, paint))
         try:
             cmd = input(
                 "\n[Enter/n]ext  [p]rev  [o]wner menu  [q]uit: "
@@ -162,7 +240,11 @@ def page_records(owner_id, records):
 
 def main(argv=None):
     argv = argv if argv is not None else sys.argv[1:]
-    path = argv[0] if argv else DEFAULT_CSV
+    force_no_color = "--no-color" in argv
+    positional = [a for a in argv if not a.startswith("-")]
+    path = positional[0] if positional else DEFAULT_CSV
+
+    paint = Palette(color_enabled(sys.stdout, os.environ, force_no_color))
 
     try:
         records = load_records(path)
@@ -178,11 +260,11 @@ def main(argv=None):
     print(f"Loaded {len(records)} records across {len(groups)} owners.")
 
     while True:
-        owner_id = select_owner(groups)
+        owner_id = select_owner(groups, paint)
         if owner_id is None:
             print("Bye.")
             return 0
-        if page_records(owner_id, groups[owner_id]) == "quit":
+        if page_records(owner_id, groups[owner_id], paint) == "quit":
             print("Bye.")
             return 0
 

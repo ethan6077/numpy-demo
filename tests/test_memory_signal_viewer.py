@@ -149,5 +149,58 @@ class FormatRecordTest(unittest.TestCase):
         self.assertIn("User: hello", out)
 
 
+class ColorEnabledTest(unittest.TestCase):
+    class _Stream:
+        def __init__(self, tty):
+            self._tty = tty
+
+        def isatty(self):
+            return self._tty
+
+    def test_disabled_when_forced(self):
+        self.assertFalse(viewer.color_enabled(self._Stream(True), {}, force_no_color=True))
+
+    def test_disabled_when_no_color_env_present(self):
+        self.assertFalse(viewer.color_enabled(self._Stream(True), {"NO_COLOR": "1"}))
+
+    def test_disabled_when_not_a_tty(self):
+        self.assertFalse(viewer.color_enabled(self._Stream(False), {}))
+
+    def test_enabled_when_tty_and_no_env(self):
+        self.assertTrue(viewer.color_enabled(self._Stream(True), {}))
+
+
+class PaletteTest(unittest.TestCase):
+    def test_disabled_palette_returns_text_unchanged(self):
+        paint = viewer.Palette(enabled=False)
+        self.assertEqual(paint.header("hi"), "hi")
+
+    def test_enabled_palette_wraps_with_ansi_and_reset(self):
+        paint = viewer.Palette(enabled=True)
+        out = paint.header("hi")
+        self.assertTrue(out.startswith("\033["))
+        self.assertTrue(out.endswith("\033[0m"))
+        self.assertIn("hi", out)
+
+
+class FormatRecordColorTest(unittest.TestCase):
+    REC = {
+        "owner_id": "owner-abcdef", "timestamp": "2026-06-25T20:27:40",
+        "signals": {"property_intent_type": "buyer"},
+        "content": "User: hello\nAgent: hi", "raw_id": "1",
+    }
+
+    def test_no_color_output_has_no_escape_codes(self):
+        out = viewer.format_record(self.REC, 0, 3, viewer.Palette(enabled=False))
+        self.assertNotIn("\033[", out)
+        self.assertIn("User: hello", out)
+
+    def test_colored_output_has_escape_codes_and_preserves_text(self):
+        out = viewer.format_record(self.REC, 0, 3, viewer.Palette(enabled=True))
+        self.assertIn("\033[", out)
+        self.assertIn("User: hello", out)
+        self.assertIn("buyer", out)
+
+
 if __name__ == "__main__":
     unittest.main()
